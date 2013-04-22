@@ -17,12 +17,14 @@
 
 #define PI 				3.14159265f
 #define PADCAL			50
-#define MAXJP 			11
+#define MAXJP 			13
 #define RAPID_A 		256
 #define RAPID_B			512
+#define P2_A            1024
+#define P2_B            2048
 
 extern int rumbleRequest[4];
-extern u32 btnmap[2][4][12];
+extern u32 btnmap[2][4][MAXJP];
 
 void SetControllers();
 void ResetControls(int cc = -1, int wc = -1);
