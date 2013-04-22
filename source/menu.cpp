@@ -2546,6 +2546,8 @@ static int MenuSettingsMappingsMap()
 			sprintf(options.name[i++], "Left");
 			sprintf(options.name[i++], "Right");
 			sprintf(options.name[i++], "Insert Coin / Switch Disk");
+			sprintf(options.name[i++], "B (Player 2)");
+			sprintf(options.name[i++], "A (Player 2)");
 			options.length = i;
 			break;
 		case CTRL_ZAPPER:

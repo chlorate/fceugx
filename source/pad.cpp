@@ -37,9 +37,9 @@ void *InputDPR;
 static INPUTC *zapperdata[2];
 static unsigned int myzappers[2][3];
 
-u32 nespadmap[11]; // Original NES controller buttons
-u32 zapperpadmap[11]; // Original NES Zapper controller buttons
-u32 btnmap[2][4][12]; // button mapping
+u32 nespadmap[MAXJP]; // Original NES controller buttons
+u32 zapperpadmap[MAXJP]; // Original NES Zapper controller buttons
+u32 btnmap[2][4][MAXJP]; // button mapping
 
 void ResetControls(int consoleCtrl, int wiiCtrl)
 {
@@ -59,6 +59,8 @@ void ResetControls(int consoleCtrl, int wiiCtrl)
 	nespadmap[i++] = JOY_LEFT;
 	nespadmap[i++] = JOY_RIGHT;
 	nespadmap[i++] = 0; // insert coin for VS games, insert/eject/select disk for FDS
+	nespadmap[i++] = P2_B; // P2's B button controlled by other players
+	nespadmap[i++] = P2_A; // P2's A button controlled by other players
 
 	/*** Gamecube controller Padmap ***/
 	if(consoleCtrl == -1 || (consoleCtrl == CTRL_PAD && wiiCtrl == CTRLR_GCPAD))
@@ -75,6 +77,8 @@ void ResetControls(int consoleCtrl, int wiiCtrl)
 		btnmap[CTRL_PAD][CTRLR_GCPAD][i++] = PAD_BUTTON_LEFT;
 		btnmap[CTRL_PAD][CTRLR_GCPAD][i++] = PAD_BUTTON_RIGHT;
 		btnmap[CTRL_PAD][CTRLR_GCPAD][i++] = PAD_TRIGGER_L;
+		btnmap[CTRL_PAD][CTRLR_GCPAD][i++] = 0;
+		btnmap[CTRL_PAD][CTRLR_GCPAD][i++] = 0;
 	}
 
 	/*** Wiimote Padmap ***/
@@ -92,6 +96,8 @@ void ResetControls(int consoleCtrl, int wiiCtrl)
 		btnmap[CTRL_PAD][CTRLR_WIIMOTE][i++] = WPAD_BUTTON_UP;
 		btnmap[CTRL_PAD][CTRLR_WIIMOTE][i++] = WPAD_BUTTON_DOWN;
 		btnmap[CTRL_PAD][CTRLR_WIIMOTE][i++] = WPAD_BUTTON_A;
+		btnmap[CTRL_PAD][CTRLR_WIIMOTE][i++] = 0;
+		btnmap[CTRL_PAD][CTRLR_WIIMOTE][i++] = 0;
 	}
 
 	/*** Classic Controller Padmap ***/
@@ -109,6 +115,8 @@ void ResetControls(int consoleCtrl, int wiiCtrl)
 		btnmap[CTRL_PAD][CTRLR_CLASSIC][i++] = WPAD_CLASSIC_BUTTON_LEFT;
 		btnmap[CTRL_PAD][CTRLR_CLASSIC][i++] = WPAD_CLASSIC_BUTTON_RIGHT;
 		btnmap[CTRL_PAD][CTRLR_CLASSIC][i++] = WPAD_CLASSIC_BUTTON_FULL_L;
+		btnmap[CTRL_PAD][CTRLR_CLASSIC][i++] = 0;
+		btnmap[CTRL_PAD][CTRLR_CLASSIC][i++] = 0;
 	}
 
 	/*** Nunchuk + wiimote Padmap ***/
@@ -126,6 +134,8 @@ void ResetControls(int consoleCtrl, int wiiCtrl)
 		btnmap[CTRL_PAD][CTRLR_NUNCHUK][i++] = WPAD_BUTTON_LEFT;
 		btnmap[CTRL_PAD][CTRLR_NUNCHUK][i++] = WPAD_BUTTON_RIGHT;
 		btnmap[CTRL_PAD][CTRLR_NUNCHUK][i++] = WPAD_BUTTON_A;
+		btnmap[CTRL_PAD][CTRLR_NUNCHUK][i++] = 0;
+		btnmap[CTRL_PAD][CTRLR_NUNCHUK][i++] = 0;
 	}
 
 	/*** Zapper : GC controller button mapping ***/
@@ -355,6 +365,26 @@ static void UpdateCursorPosition (int chan)
 
 extern int rapidAlternator;
 
+static bool JoyPressed(unsigned short chan, int i)
+{
+	u32 jp = userInput[chan].pad.btns_h;
+
+	#ifdef HW_RVL
+	u32 wp = userInput[chan].wpad->btns_h;
+	u32 exp_type;
+	if ( WPAD_Probe(chan, &exp_type) != 0 ) exp_type = WPAD_EXP_NONE;
+	#endif
+	
+	return (
+		(jp & btnmap[CTRL_PAD][CTRLR_GCPAD][i]) // gamecube controller
+		#ifdef HW_RVL
+		|| ( (exp_type == WPAD_EXP_NONE) && (wp & btnmap[CTRL_PAD][CTRLR_WIIMOTE][i]) ) // wiimote
+		|| ( (exp_type == WPAD_EXP_CLASSIC) && (wp & btnmap[CTRL_PAD][CTRLR_CLASSIC][i]) ) // classic controller
+		|| ( (exp_type == WPAD_EXP_NUNCHUK) && (wp & btnmap[CTRL_PAD][CTRLR_NUNCHUK][i]) ) // nunchuk + wiimote
+		#endif
+	);
+}
+
 static unsigned char DecodeJoy(unsigned short chan)
 {
 	s8 pad_x = userInput[chan].pad.stickX;
@@ -412,15 +442,9 @@ static unsigned char DecodeJoy(unsigned short chan)
 
 	// Report pressed buttons (gamepads)
 	int i;
-	for (i = 0; i < MAXJP; i++)
+	for (i = 0; i < 11; i++)
 	{
-		if ( (jp & btnmap[CTRL_PAD][CTRLR_GCPAD][i])											// gamecube controller
-		#ifdef HW_RVL
-		|| ( (exp_type == WPAD_EXP_NONE) && (wp & btnmap[CTRL_PAD][CTRLR_WIIMOTE][i]) )	// wiimote
-		|| ( (exp_type == WPAD_EXP_CLASSIC) && (wp & btnmap[CTRL_PAD][CTRLR_CLASSIC][i]) )	// classic controller
-		|| ( (exp_type == WPAD_EXP_NUNCHUK) && (wp & btnmap[CTRL_PAD][CTRLR_NUNCHUK][i]) )	// nunchuk + wiimote
-		#endif
-		)
+		if(JoyPressed(chan, i))
 		{
 			// if zapper is on, ignore all buttons except START and SELECT
 			if(GCSettings.Controller != CTRL_ZAPPER || nespadmap[i] == JOY_START || nespadmap[i] == JOY_SELECT)
@@ -435,11 +459,11 @@ static unsigned char DecodeJoy(unsigned short chan)
 					// activate rapid fire for B button
 					J |= JOY_B;
 				}
-				else if(nespadmap[i] > 0)
+				else if(nespadmap[i] > 0 && nespadmap[i] != P2_A && nespadmap[i] != P2_B)
 				{
 					J |= nespadmap[i];
 				}
-				else
+				else if(nespadmap[i] == 0)
 				{
 					if(GameInfo->type == GIT_FDS) // FDS
 					{
@@ -452,6 +476,30 @@ static unsigned char DecodeJoy(unsigned short chan)
 					}
 					else
 						FCEUI_VSUniCoin(); // insert coin for VS Games
+				}
+			}
+		}
+	}
+
+	// Player 2 buttons, controlled by other players -- check for other players
+	// pressing P2_A and P2_B buttons when we're decoding P2 input
+	if(chan == 1)
+	{
+		unsigned short otherchan;
+		for (otherchan = 0; otherchan < 4; otherchan++)
+		{
+			for (i = 11; i < 13; i++)
+			{
+				if (JoyPressed(otherchan, i))
+				{
+					if (nespadmap[i] == P2_A)
+					{
+						J |= JOY_A;
+					}
+					else if (nespadmap[i] == P2_B)
+					{
+						J |= JOY_B;
+					}
 				}
 			}
 		}
