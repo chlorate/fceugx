@@ -533,10 +533,9 @@ void GetJoy()
 
 	// Turbo mode
 	// RIGHT on c-stick and on classic ctrlr right joystick
-	if(userInput[0].pad.substickX > 70 || userInput[0].WPAD_StickX(1) > 70)
-		turbomode = 1;
-	else
-		turbomode = 0;
+	turbomode = (
+		GCSettings.turbo &&
+		(userInput[0].pad.substickX > 70 || userInput[0].WPAD_StickX(1) > 70));
 
 	// request to go back to menu
 	if(MenuRequested())
