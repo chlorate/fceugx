@@ -162,6 +162,7 @@ preparePrefsData ()
 
 	createXMLSetting("Controller", "Controller", toStr(GCSettings.Controller));
 	createXMLSetting("crosshair", "Zapper Crosshair", toStr(GCSettings.crosshair));
+	createXMLSetting("turbo", "Turbo Button", toStr(GCSettings.turbo));
 
 	createXMLController(btnmap[CTRL_PAD][CTRLR_GCPAD], "btnmap_pad_gcpad", "NES Pad - GameCube Controller");
 	createXMLController(btnmap[CTRL_PAD][CTRLR_WIIMOTE], "btnmap_pad_wiimote", "NES Pad - Wiimote");
@@ -334,6 +335,7 @@ decodePrefsData ()
 
 			loadXMLSetting(&GCSettings.Controller, "Controller");
 			loadXMLSetting(&GCSettings.crosshair, "crosshair");
+			loadXMLSetting(&GCSettings.turbo, "turbo");
 
 			loadXMLController(btnmap[CTRL_PAD][CTRLR_GCPAD], "btnmap_pad_gcpad");
 			loadXMLController(btnmap[CTRL_PAD][CTRLR_WIIMOTE], "btnmap_pad_wiimote");
@@ -401,6 +403,7 @@ DefaultSettings ()
 	GCSettings.crosshair = 1; // show zapper crosshair
 	GCSettings.spritelimit = 1; // enforce 8 sprite limit
 	GCSettings.gamegenie = 1;
+	GCSettings.turbo = 1; // enable turbo mode button
 
 	GCSettings.render = 2; // Unfiltered
 	GCSettings.hideoverscan = 2; // hide both horizontal and vertical
