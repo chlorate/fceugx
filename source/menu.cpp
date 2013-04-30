@@ -2480,6 +2480,10 @@ static int MenuSettingsMappingsMap()
 	OptionList options;
 	bool firstRun = true;
 
+	// Turbo is a toggle, so it behaves differently from the other buttons and
+	// we need to track what option index it is
+	int turboIndex = -1;
+
 	char menuTitle[100];
 	char menuSubtitle[100];
 	sprintf(menuTitle, "Game Settings - Button Mappings");
@@ -2546,14 +2550,20 @@ static int MenuSettingsMappingsMap()
 			sprintf(options.name[i++], "Left");
 			sprintf(options.name[i++], "Right");
 			sprintf(options.name[i++], "Insert Coin / Switch Disk");
-			options.length = i;
 			break;
 		case CTRL_ZAPPER:
 			sprintf(options.name[i++], "Fire");
 			sprintf(options.name[i++], "Insert Coin");
-			options.length = i;
 			break;
 	};
+
+	if(mapMenuCtrl == CTRLR_CLASSIC || mapMenuCtrl == CTRLR_GCPAD)
+	{
+		sprintf(options.name[i++], "Turbo");
+		turboIndex = i - 1;
+	}
+
+	options.length = i;
 
 	for(i=0; i < options.length; i++)
 		options.value[i][0] = 0;
@@ -2602,8 +2612,15 @@ static int MenuSettingsMappingsMap()
 
 		if(ret >= 0)
 		{
-			// get a button selection from user
-			btnmap[mapMenuCtrlNES][mapMenuCtrl][ret] = ButtonMappingWindow();
+			if(ret == turboIndex)
+			{
+				GCSettings.turbo = !GCSettings.turbo;
+			}
+			else
+			{
+				// get a button selection from user
+				btnmap[mapMenuCtrlNES][mapMenuCtrl][ret] = ButtonMappingWindow();
+			}
 		}
 
 		if(ret >= 0 || firstRun)
@@ -2612,18 +2629,32 @@ static int MenuSettingsMappingsMap()
 
 			for(i=0; i < options.length; i++)
 			{
-				for(j=0; j < ctrlr_def[mapMenuCtrl].num_btns; j++)
+				if(i == turboIndex)
 				{
-					if(btnmap[mapMenuCtrlNES][mapMenuCtrl][i] == 0)
+					if(GCSettings.turbo)
 					{
-						options.value[i][0] = 0;
+						sprintf(options.value[i], "Enabled (right on right stick)");
 					}
-					else if(btnmap[mapMenuCtrlNES][mapMenuCtrl][i] ==
-						ctrlr_def[mapMenuCtrl].map[j].btn)
+					else
 					{
-						if(strcmp(options.value[i], ctrlr_def[mapMenuCtrl].map[j].name) != 0)
-							sprintf(options.value[i], ctrlr_def[mapMenuCtrl].map[j].name);
-						break;
+						sprintf(options.value[i], "Disabled");
+					}
+				}
+				else
+				{
+					for(j=0; j < ctrlr_def[mapMenuCtrl].num_btns; j++)
+					{
+						if(btnmap[mapMenuCtrlNES][mapMenuCtrl][i] == 0)
+						{
+							options.value[i][0] = 0;
+						}
+						else if(btnmap[mapMenuCtrlNES][mapMenuCtrl][i] ==
+							ctrlr_def[mapMenuCtrl].map[j].btn)
+						{
+							if(strcmp(options.value[i], ctrlr_def[mapMenuCtrl].map[j].name) != 0)
+								sprintf(options.value[i], ctrlr_def[mapMenuCtrl].map[j].name);
+							break;
+						}
 					}
 				}
 			}

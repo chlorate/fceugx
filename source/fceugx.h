@@ -107,7 +107,8 @@ struct SGCSettings{
 	int		MusicVolume;
 	int		SFXVolume;
 	int		Rumble;
-	int 	language;
+	int		language;
+	int		turbo;
 };
 
 void ExitApp();
